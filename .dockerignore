@@ -1,0 +1,12 @@
+.git
+dist
+/node_modules
+.env.example
+.gitignore
+.idea
+.run
+docker-compose.yml
+compose.yml
+Dockerfile
+README.md
+debug.log

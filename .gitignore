@@ -1,0 +1,14 @@
+.idea/
+yarn-error.log
+node_modules/
+dist/
+.env
+debug.log
+generated/
+logs/
+prisma/docs/
+**/unknown.json
+/docker/postgresql/data/
+/compose.yml
+/.run/
+/.run/nest.run.xml

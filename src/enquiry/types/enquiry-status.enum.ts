@@ -1,0 +1,7 @@
+export enum EnquiryStatus {
+  ACCEPTED = 'ACCEPTED',
+  WAITING = 'WAITING',
+  PROCESSING = 'PROCESSING',
+  COMPLETE = 'COMPLETE',
+  ERROR = 'ERROR',
+}

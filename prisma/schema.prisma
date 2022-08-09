@@ -1,0 +1,125 @@
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EnquiryStatus {
+  ACCEPTED
+  WAITING
+  PROCESSING
+  COMPLETE
+  ERROR
+}
+
+enum EnquiryAttemptProducedType {
+  CREATE
+  REFRESH
+  GIVE
+  VOID
+}
+
+model Enquiry {
+  id         String           @id @default(uuid()) @db.Uuid
+  status     EnquiryStatus    @default(ACCEPTED)
+  meta       Json?
+  hash       String?          @unique
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  attempts   EnquiryAttempt[]
+  rows       Row[]
+  identities Identity[]
+
+  @@map("enquiries")
+}
+
+model EnquiryAttempt {
+  id        String    @id @default(uuid()) @db.Uuid
+  produced  EnquiryAttemptProducedType
+  meta      Json?
+  createdAt DateTime  @default(now())
+  enquiry   Enquiry?  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  enquiryId String?   @db.Uuid
+
+  @@map("enquiry_attempts")
+}
+
+model Identity {
+  id        String    @id @default(uuid()) @db.Uuid
+  itn       String?   @unique @db.Char(12)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  personal  Json?
+  rows      Row[]
+  enquiries Enquiry[]
+
+  @@map("identities")
+}
+
+model Row {
+  id         String    @id @default(uuid()) @db.Uuid
+  value      String
+  hash       String    @unique
+  createdAt  DateTime  @default(now())
+  meta       Json?
+
+  enquiry    Enquiry?  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  enquiryId  String?   @db.Uuid
+  identity   Identity? @relation(fields: [identityId], references: [id])
+  identityId String?   @db.Uuid
+  type       RowType   @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  typeId     Int
+  union      RowUnion? @relation(fields: [unionId], references: [id], onDelete: Cascade)
+  unionId    String?   @db.Uuid
+
+  @@map("rows")
+}
+
+model RowUnion {
+  id             String       @id @default(uuid()) @db.Uuid
+  hash           String?      @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  rowUnionTypeId Int
+  type           RowUnionType @relation(fields: [rowUnionTypeId], references: [id])
+  rows           Row[]
+
+  @@map("row_unuions")
+}
+
+model RowUnionType {
+  id         Int        @id @default(autoincrement())
+  key        String     @unique
+  group      DataGroup  @relation(fields: [groupId], references: [id])
+  groupId    Int
+  types      RowType[]
+  children   RowUnion[]
+
+  @@map("row_union_types")
+}
+
+model RowType {
+  id      Int                 @id @default(autoincrement())
+  key     String              @unique
+  unionId Int?
+  groupId Int
+  group   DataGroup           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  union   RowUnionType?       @relation(fields: [unionId], references: [id])
+  rows    Row[]
+
+  @@map("row_types")
+}
+
+model DataGroup {
+  id     Int            @id @default(autoincrement())
+  key    String         @unique
+  meta   Json?
+  types  RowType[]
+  unions RowUnionType[]
+
+  @@map("data_groups")
+}
